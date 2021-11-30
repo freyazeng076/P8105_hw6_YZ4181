@@ -1,0 +1,10 @@
+---
+title: "P8105_HW6_YZ4181"
+author: "Yuanyuan Zeng(yz4181)"
+date: "11/30/2021"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
