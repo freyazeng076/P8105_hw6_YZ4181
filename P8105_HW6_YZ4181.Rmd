@@ -39,6 +39,8 @@ birthweigh = read_csv("./birthweight.csv") %>%
     malform = factor(malform))
 
 head(birthweigh,10)
+
+# check for missing value
 skimr::skim(birthweigh)
 ```
 * The original data set includes 4342 observations and 20 variables. There is no missing value. The variable of baby sex, father race, mother race, and malformations are re-coded based on the information and converted into factors. Other variables remain as numeric.
@@ -97,8 +99,7 @@ cv_df = cv_df %>%
   mutate(
     rmse_proposed_mod = map2_dbl(.x = proposed_mod, .y = test, ~rmse(model = .x, data = .y)),
     rmse_mod2 = map2_dbl(.x = mod2, .y = test, ~rmse(model = .x, data = .y)),
-    rmse_mod3 = map2_dbl(.x = mod3, .y = test, ~rmse(model = .x, data = .y))
-  )
+    rmse_mod3 = map2_dbl(.x = mod3, .y = test, ~rmse(model = .x, data = .y)))
 
 # Show the rmse in plot
 cv_df %>% 
@@ -118,4 +119,33 @@ cv_df %>%
 
 * According to the boxplot, model3 (using head circumference, length, sex, and all interactions) has lowest rmse which means that model3 has a lowest prediction error among three models. Therefore, model3 is better compared with proposed model and model2.
 
+
+## Problem 2
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+
+#### Bootstrap sample
+```{r}
+boots_straps = weather_df %>% modelr::bootstrap(n = 5000) %>% 
+  mutate(
+    models = map(.x = strap, ~lm(tmax ~ tmin, data = .x)),
+    results1 = map(models, broom::glance)
+  ) %>% 
+  select(-strap, -models) %>% 
+  unnest(results1) %>% 
+  select(.id, r.squared)
+  
+boots_straps %>% ggplot(aes(x = r.squared)) + geom_density()
+```
 
