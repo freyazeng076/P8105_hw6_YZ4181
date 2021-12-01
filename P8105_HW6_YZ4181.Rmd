@@ -70,4 +70,5 @@ birthweigh %>%
     title = "Plot of Residuals against Fitted Value"
   )
 ```
+
 * The plot shows that the residuals randomly fall around 0 for both female and male. There are some points that deviate from 0 which means that those points are away from the fitted values.
