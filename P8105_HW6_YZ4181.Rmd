@@ -37,6 +37,9 @@ birthweigh = read_csv("./birthweight.csv") %>%
     mrace = factor(mrace),
     malform = recode(malform, `0` = "Absent", `1` = "Present"),
     malform = factor(malform))
+
+head(birthweigh,10)
+skimr::skim(birthweigh)
 ```
 * The original data set includes 4342 observations and 20 variables. There is no missing value. The variable of baby sex, father race, mother race, and malformations are re-coded based on the information and converted into factors. Other variables remain as numeric.
 
@@ -56,7 +59,7 @@ propose_model %>% broom::tidy() %>%
 ```
 * The birth weight of the baby depends on baby's length at birth, baby's sex and mother's weight at delivery. We assume there is no interaction between the predictors. Increasing in one unit of length leads to increase baby weight by 134.276 grams. One unit increase of mother's weight at delivery leads to increase baby weight by 2.862 grams. Being males increases weight by 9.658 grams comparing with females.
 
-### Diagnostics
+#### Diagnostics
 ```{r}
 birthweigh %>% 
   modelr::add_residuals(propose_model) %>% 
@@ -71,4 +74,48 @@ birthweigh %>%
   )
 ```
 
-* The plot shows that the residuals randomly fall around 0 for both female and male. There are some points that deviate from 0 which means that those points are away from the fitted values.
+* The plot shows that the residuals randomly fall around 0 for both female and male. There are some points that deviate from 0 which mean that those points are away from the fitted values.
+
+#### Comparing proposed model with two other models
+```{r}
+# Select the variables needed for three models
+birthweigh = birthweigh %>% 
+  select(bwt, blength, babysex, delwt, gaweeks, bhead)
+
+# Perform training/testing split
+cv_df = 
+  crossv_mc(birthweigh, 100) %>% 
+  mutate(train = map(train, as_tibble),
+         test = map(test, as_tibble))
+
+# Calculate the rmse for three models
+cv_df = cv_df %>% 
+  mutate(
+    proposed_mod = map(.x = train, ~lm(bwt ~ blength + babysex + delwt, data = .x)),
+    mod2 = map(.x = train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+    mod3 = map(.x = train, ~lm(bwt ~ bhead * blength + babysex * blength + bhead * blength * babysex, data = .x ))) %>% 
+  mutate(
+    rmse_proposed_mod = map2_dbl(.x = proposed_mod, .y = test, ~rmse(model = .x, data = .y)),
+    rmse_mod2 = map2_dbl(.x = mod2, .y = test, ~rmse(model = .x, data = .y)),
+    rmse_mod3 = map2_dbl(.x = mod3, .y = test, ~rmse(model = .x, data = .y))
+  )
+
+# Show the rmse in plot
+cv_df %>% 
+  select(.id, starts_with("rmse")) %>% 
+  pivot_longer(
+    rmse_proposed_mod:rmse_mod3,
+    values_to = "rmse",
+    names_to = "model",
+    names_prefix = "rmse_") %>% 
+  mutate(
+    model = fct_inorder(model)
+  ) %>% 
+  ggplot(
+    aes(x = model, y = rmse)) + geom_boxplot() +
+  labs(titble = "Boxplot of rmse for three models")
+```
+
+* According to the boxplot, model3 (using head circumference, length, sex, and all interactions) has lowest rmse which means that model3 has a lowest prediction error among three models. Therefore, model3 is better compared with proposed model and model2.
+
+
