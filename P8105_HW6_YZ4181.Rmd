@@ -3,6 +3,8 @@ title: "P8105_HW6_YZ4181"
 author: "Yuanyuan Zeng(yz4181)"
 date: "11/30/2021"
 output: github_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -40,10 +42,8 @@ birthweigh = read_csv("./birthweight.csv") %>%
 
 
 #### Propose regression model
-
-The birth weight of the baby depends on baby's length at birth, baby's sex and mother's weight at delivery
 ```{r}
-propose_model= lm(bwt ~ blength + delwt + babysex, data = birthweigh)
+propose_model= lm(bwt ~ blength + delwt + babysex, data = birthweigh) # regression model
 
 propose_model %>% broom::tidy() %>% 
   select(term, estimate, p.value) %>% 
@@ -53,6 +53,21 @@ propose_model %>% broom::tidy() %>%
     term = replace(term, term == "babysexmale", "baby sex (male)")
   ) %>% 
   knitr::kable(digits = 3)
-
 ```
+* The birth weight of the baby depends on baby's length at birth, baby's sex and mother's weight at delivery. We assume there is no interaction between the predictors. Increasing in one unit of length leads to increase baby weight by 134.276 grams. One unit increase of mother's weight at delivery leads to increase baby weight by 2.862 grams. Being males increases weight by 9.658 grams comparing with females.
 
+### Diagnostics
+```{r}
+birthweigh %>% 
+  modelr::add_residuals(propose_model) %>% 
+  modelr::add_predictions(propose_model) %>% 
+  ggplot(aes(x = pred, y = resid))+
+  geom_point()+
+  facet_grid(~babysex)+
+  labs(
+    x = "Fitted Value",
+    y = "Residuals",
+    title = "Plot of Residuals against Fitted Value"
+  )
+```
+* The plot shows that the residuals randomly fall around 0 for both female and male. There are some points that deviate from 0 which means that those points are away from the fitted values.
