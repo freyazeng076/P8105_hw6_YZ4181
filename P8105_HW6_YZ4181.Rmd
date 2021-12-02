@@ -145,6 +145,8 @@ weather_df =
 #### Bootstrap sample
 ```{r}
 # compute r.squared
+set.seed(1)
+
 boots_straps = weather_df %>% modelr::bootstrap(n = 5000)
 
 r.squared_result = boots_straps %>% 
@@ -187,19 +189,22 @@ log_result_plot =log_result %>% ggplot(aes(x = estimate)) +
   labs(title = "Distribution of log(Bo*B1)",
        x = "log(Bo*B1)")
 
-r.squared_plot + log_result_plot
+r.squared_plot 
+log_result_plot
 ```
 
-* R.squared is the measure of goodness of fit. The distribution of r.squared is slightly left-skewed, which may related to the frequency of small outliers in the bootstrap sample. The distribution of log(Bo*B1) is normal distributed around 2.01.
+* R.squared is the measure of goodness of fit. The distribution of r.squared is normal distributed around 0.912. The distribution of log(Bo*B1) is normal distributed around 2.01.
 
 #### Construct 95%CI for both estimates
 ```{r}
+# 95% CI for r.squared
 r.squared_result %>% 
   summarize(
     ci_lower = quantile(r.squared, 0.025),
     ci_upper = quantile(r.squared, 0.975)) %>% 
   knitr::kable()
 
+# 95% CI for log(Bo*B1)
 log_result %>% 
   ungroup(id) %>% 
   summarize(
