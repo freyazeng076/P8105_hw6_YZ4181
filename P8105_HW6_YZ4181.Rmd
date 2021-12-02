@@ -137,15 +137,62 @@ weather_df =
 
 #### Bootstrap sample
 ```{r}
-boots_straps = weather_df %>% modelr::bootstrap(n = 5000) %>% 
+# compute r.squared
+boots_straps = weather_df %>% modelr::bootstrap(n = 5000)
+
+r.squared_result = boots_straps %>% 
   mutate(
     models = map(.x = strap, ~lm(tmax ~ tmin, data = .x)),
-    results1 = map(models, broom::glance)
+    results = map(models, broom::glance)
   ) %>% 
   select(-strap, -models) %>% 
-  unnest(results1) %>% 
+  unnest(results) %>% 
   select(.id, r.squared)
-  
-boots_straps %>% ggplot(aes(x = r.squared)) + geom_density()
+
+#plot the distribution of r.squared
+r.squared_result %>% 
+  ggplot(aes(x = r.squared))+
+  geom_density() +
+  labs(
+    title = "Distribution of r.squared"
+  )
+
+# compute log(B0 * B1)
+log_result = boots_straps %>% 
+  mutate(
+    models = map(.x = strap, ~lm(tmax ~ tmin, data = .x)),
+    results = map(models, broom::tidy)
+  ) %>% 
+  select(-strap, -models) %>% 
+  unnest(results) %>% 
+  select(.id, term, estimate)  %>% 
+  group_by(.id) %>% 
+  pivot_wider(
+    names_from = "term",
+    values_from = "estimate") %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    estimate = log(intercept * tmin)) %>% 
+  select(-intercept, -tmin)
+
+# Plot the distribution
+log_result %>% ggplot(aes(x = estimate)) + 
+  geom_density() +
+  labs(title = "Distribution of log(Bo*B1)",
+       x = "log(Bo*B1)")
+```
+
+#### Construct 95%CI for both estimates
+```{r}
+r.squared_result %>% 
+  summarize(
+    ci_lower = quantile(r.squared, 0.025),
+    ci_upper = quantile(r.squared, 0.975)) %>% 
+  knitr::kable()
+
+log_result %>% 
+  summarize(
+    ci_lower = quantile(estimate, 0.025),
+    ci_upper = quantile(estimate, 0.975))
 ```
 
