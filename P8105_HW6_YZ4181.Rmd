@@ -114,7 +114,7 @@ cv_df %>%
   ) %>% 
   ggplot(
     aes(x = model, y = rmse)) + geom_boxplot() +
-  labs(titble = "Boxplot of rmse for three models")
+  labs(title = "Boxplot of rmse for three models")
 ```
 
 * According to the boxplot, model3 (using head circumference, length, sex, and all interactions) has lowest rmse which means that model3 has a lowest prediction error among three models. Therefore, model3 is better compared with proposed model and model2.
